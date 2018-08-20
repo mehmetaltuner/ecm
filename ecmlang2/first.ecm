@@ -1,0 +1,142 @@
+(def {null} {})
+(def {true} 1)
+(def {false} 0)
+(def {otherwise} true)
+
+(fun {get_non_zero n l i} {
+    if {eq n i}
+    { eval (head l) }
+    { get_non_zero (+ 1 n) ( tail l ) i }
+})
+
+(fun {get l i} {
+    get_non_zero 0 l i
+})
+
+(fun {last l} {
+    get l (- (len l) 1)
+})
+
+(fun {do & l} {
+    if {eq l null}
+    {null}
+    {last l}
+})
+
+(fun {let b} {
+  ((lambda {_} b) ())
+})
+
+( fun {map func l} {
+    if {eq l null}
+    {null}
+    { join (list (func (eval (head l)))) (map func (tail l))  }
+})
+
+( fun {exists l i}{
+    if{eq l null}
+    { false }   
+    {
+        if{eq (get l 0) i}
+        { true }
+        { exists (tail l) i }
+     }
+})
+
+( fun {flip f a b} {f b a})
+( fun {comp f g x} {f (g x)})
+
+; reverse a list by n
+( fun {nreverse n x l}{
+    if {eq n (len x)}
+    { x }
+    { nreverse n (join x (list (last l))) (init l) }
+})
+
+; reverse a list entirely
+( fun {reverse l}{
+    nreverse (len l) {} l
+})
+
+( fun {empty l} {
+    eq l null
+})
+
+; take n item from the list, starting from the top
+( fun {take l n}{
+    if{eq n 0}
+    { null }
+    { join (head l) (take (tail l) (- n 1))}
+})
+
+; drop n item from the list, starting from the bottom
+( fun {drop l n}{
+    if {eq n 0}
+    { l }
+    { drop (tail l) (- n 1) }
+})
+
+; split at index n
+( fun {split l n}{
+    list (take l n) (drop l n)
+})
+
+(fun {pack func & xs} {func xs})
+
+( fun {unpack func l} {
+    eval (join (list func) l)
+})
+
+( fun {filter cond l}{
+    if{eq l null}
+    { null }
+    {
+        join
+            (if {cond (get l 0)}
+            {head l}
+            { null })
+
+            (filter cond (tail l))
+    }
+})
+
+( fun {first l}{
+    eval (head l)
+})
+
+( fun {second l} {
+    eval (head (tail l))
+})
+
+( fun {select & cs} {
+    if {eq cs null}
+    { error "Not found" }
+    {
+        if{ first (first cs) }
+        { second (first cs) }
+        { unpack select (tail cs) }
+    }
+})
+
+(fun {month-day-suffix i} {
+  select
+    {(eq i 0)  "st"}
+    {(eq i 1)  "nd"}
+    {(eq i 3)  "rd"}
+    {(otherwise) "th"}
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;asd
