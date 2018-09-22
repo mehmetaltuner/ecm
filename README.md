@@ -1,5 +1,5 @@
 # ecm
-Yet another, very humble lisp-like programming language <br/>
+Yet another, very humble lisp-like programming language, thanks to http://www.buildyourownlisp.com/ <br/>
 
 To compile: <br/>
 	<code>gcc -std=c99 ecmlang.c mpc.c -o ecm -lm -ledit</code> <br/>
@@ -11,4 +11,5 @@ To run: <br/>
  To load libraries: <br/>
   <code>load "<lib_name>"</code> <br/>
   
- You can see the syntax and implementations of some essential functions in std.ecm library
+ You can see the syntax and implementations of some essential functions in std.ecm library <br/>
+ Used the mpc parser, https://github.com/orangeduck/mpc
