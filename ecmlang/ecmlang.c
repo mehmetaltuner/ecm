@@ -11,6 +11,12 @@
 #include "mpc.h"
 #define BUFFER_SIZE 2048
 #define ERR_SIZE 512
+/*
+    For hashing purposes
+*/
+#define A 3
+#define B 97
+
 #define LASSERT(args, cond, fmt, ...) \
   if (!(cond)) { lval_del(args); return create_lval_err(fmt, ##__VA_ARGS__); }
 /*
@@ -34,7 +40,7 @@ struct lenv;
 typedef struct lval lval;
 typedef struct lenv lenv;
 
-enum {LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXP, LVAL_QEXP, LVAL_FUN, LVAL_STR}; // lval.type
+enum {LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXP, LVAL_QEXP, LVAL_FUN, LVAL_STR, LVAL_STRU}; // lval.type
 enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM}; // lval.err
 
 char *ltype_name(int t){
@@ -65,6 +71,8 @@ struct lval{
     lenv *env;
     lval *formals;
     lval *body;
+    // struct env
+    lenv *stru;
     // Expressions
     int counter;
     struct lval **cell;
@@ -98,6 +106,8 @@ mpc_parser_t* Qexpr;
 mpc_parser_t* Expr;
 mpc_parser_t* Ecm;
 
+//int HASH_TABLE[1000];
+
 /*
     Constructor for environment
 */
@@ -127,6 +137,15 @@ void lenv_del(lenv *e){
 /*
     Variable finder
 */
+
+int hash(char *str){
+    int base = 0, str_len=strlen(str);
+    for(int i=0; i<str_len; i++){
+        base += (str[i] * (int)pow(A, i)) % B;
+    }
+    return base;
+}
+
 lval *lenv_get(lenv *e, lval *k){
     for(int i=0; i<e->counter; i++){
         if(strcmp(e->syms[i], k->sym) == 0){
@@ -241,6 +260,16 @@ lval *create_lval_sym(char *sym){
 }
 
 /*
+    Constructor for stru
+*/
+lval *create_lval_stru(){
+    lval *lvalue = malloc(sizeof(lval));
+    lvalue->type = LVAL_STRU;
+    lvalue->stru = create_lenv();
+    return lvalue;
+}
+
+/*
     Constructor for empty s-expressions
 */
 lval *create_lval_sexpr(){
@@ -309,6 +338,9 @@ void lval_del(lval* v) {
         }
         break;
 
+    case LVAL_STRU:
+        lenv_del(v->stru);
+        break;
     /* For Err or Sym free the string data */
     case LVAL_ERR: free(v->err); break;
     case LVAL_SYM: free(v->sym); break;
@@ -483,6 +515,7 @@ void lval_print(lval *lvalue){
                 printf("%d", (int)lvalue->num);
             break;
         }
+        case LVAL_STRU:  printf("<stru>"); break;
         case LVAL_ERR:   printf("Error: %s", lvalue->err);  break;
         case LVAL_SYM:   printf("%s", lvalue->sym);         break;
         case LVAL_STR:   lval_print_str(lvalue);            break;
@@ -961,25 +994,22 @@ lval *builtin_not(lenv *e, lval *a){
 
 lval *builtin_if(lenv *e, lval *a){
     LASSERT(a, a->counter == 3, "Condition function 'if' can only take 3 argument, not %d", a->counter);
-    LASSERT(a, a->cell[0]->type == LVAL_QEXP, "First argument must be q-expr, not %s",
-            ltype_name(a->cell[0]->type));
+    /*LASSERT(a, a->cell[0]->type == LVAL_NUM, "First argument must be num, not %s",
+            ltype_name(a->cell[0]->type));*/
     LASSERT(a, a->cell[1]->type == LVAL_QEXP, "Second argument must be q-expr, not %s",
             ltype_name(a->cell[1]->type));
     LASSERT(a, a->cell[2]->type == LVAL_QEXP, "Third argument must be q-expr, not %s",
             ltype_name(a->cell[2]->type));
 
-    lval *cond = lval_add(create_lval_qexpr(), lval_pop(a, 0));
+    lval *cond = lval_eval(e, lval_pop(a, 0));
     lval *body_if_true = lval_add(create_lval_qexpr(), lval_pop(a, 0));
     lval *body_if_false = lval_add(create_lval_qexpr(), lval_pop(a, 0));
 
     lval_del(a);
 
-    lval *result = builtin_eval(e, cond);
-    /*LASSERT(result,result->counter == 0 && result->type == LVAL_NUM && (result->num == 1 || result->num == 0),
-            "Invalid input, expected a cond argument (1 or 0), got %s",
-            ltype_name(result->type));*/
+    //lval *result = builtin_eval(e, cond);
 
-    if((int)result->num == 0){
+    if((int)cond->num == 0){
         return builtin_eval(e, body_if_false);
     }
     return builtin_eval(e, body_if_true);

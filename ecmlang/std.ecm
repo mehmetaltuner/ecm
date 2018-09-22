@@ -4,7 +4,7 @@
 (def {otherwise} true)
 
 (fun {get_non_zero n l i} {
-    if {eq n i}
+    if (eq n i)
     { eval (head l) }
     { get_non_zero (+ 1 n) ( tail l ) i }
 })
@@ -18,7 +18,7 @@
 })
 
 (fun {do & l} {
-    if {eq l null}
+    if (eq l null)
     {null}
     {last l}
 })
@@ -28,16 +28,16 @@
 })
 
 ( fun {map func l} {
-    if {eq l null}
+    if (eq l null)
     {null}
     { join (list (func (eval (head l)))) (map func (tail l))  }
 })
 
 ( fun {exists l i}{
-    if{eq l null}
-    { false }   
+    if(eq l null)
+    { false }
     {
-        if{eq (get l 0) i}
+        if(eq (get l 0) i)
         { true }
         { exists (tail l) i }
      }
@@ -48,7 +48,7 @@
 
 ; reverse a list by n
 ( fun {nreverse n x l}{
-    if {eq n (len x)}
+    if (eq n (len x))
     { x }
     { nreverse n (join x (list (last l))) (init l) }
 })
@@ -64,14 +64,14 @@
 
 ; take n item from the list, starting from the top
 ( fun {take l n}{
-    if{eq n 0}
+    if(eq n 0)
     { null }
     { join (head l) (take (tail l) (- n 1))}
 })
 
 ; drop n item from the list, starting from the bottom
 ( fun {drop l n}{
-    if {eq n 0}
+    if (eq n 0)
     { l }
     { drop (tail l) (- n 1) }
 })
@@ -88,7 +88,7 @@
 })
 
 ( fun {filter cond l}{
-    if{eq l null}
+    if(eq l null)
     { null }
     {
         join
@@ -109,7 +109,7 @@
 })
 
 ( fun {select & cs} {
-    if {eq cs null}
+    if (eq cs null)
     { error "Not found" }
     {
         if{ first (first cs) }
@@ -126,17 +126,56 @@
     {(otherwise) "th"}
 })
 
+(fun {fib n}{
+    select
+        {(eq n 0) 0}
+        {(eq n 1) 1}
+        {otherwise (+ (fib (- n 1)) (fib (- n 2)))}
+})
 
 
+; foldl function
+( fun {foldl func base l}{
+    if (eq l null)
+    { base }
+    { foldl func (func base (first l)) (tail l) }
+})
+
+( fun {sum l} {foldl + 0 l})
+( fun {product l} {foldl * 1 l})
+
+( fun {len l}{
+    foldl (lambda {base _} {+ 1 base}) 0 l
+})
+
+( fun {elem l i}{
+    unpack or (foldl ((lambda {searching base item}{
+        if (eq searching item)
+        { join {true} base }
+        { join {false} base }
+    }) i ) {false} l)
+})
+
+( fun {struct & v} {
+})
+
+(def {x} (struct {
+    {add1 5}
+    {add2 10}
+    {calculate (  lambda {x y} {+ x y} )}
+}))
 
 
+(fun {filter_p l cond counter} {
+    if (eq counter (len l))
+    { l }
+    {
+        if (< (eval (head l)) cond)
+        { filter_p (tail l) cond (+ 1 counter) }
+        { filter_p ( l ) cond  (+ 1 counter) }
+    }
+})
+
+(fun {filter l cond} { filter_p l cond 0 })
 
 
-
-
-
-
-
-
-
-;asd
